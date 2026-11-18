@@ -29,6 +29,22 @@
 | TRAP-06 | 全角千分位 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/devices/rules.py` | `tests/test_devices.py::test_fullwidth_number` |
 | TRAP-11 | UTC归一 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/devices/rules.py` | `tests/test_devices.py::test_time_equivalence` |
 | TRAP-23 | 限电区间并集 | 静默错算或证据丢失 | 以可复核规则显式处理 | `app/modules/slicing/rules.py` | `tests/test_slicing.py::test_overlapping_real` |
+| TRAP-31 | 旧编码混入新批 | 静默按新格式解码污染新批 | 边界闸按编码强制泳道，互串即阻断 | `app/boundary.py` | `tests/test_boundary.py::test_legacy_bytes_only_enter_legacy_lane` |
+| TRAP-32 | 停用后旧口仍收口 | 停用无法收口 | cutover 阶段旧入口对新文件 423，快照重放豁免 | `app/boundary.py` | `tests/test_boundary.py::test_cutover_closes_legacy_intake_but_snapshot_replays` |
+| TRAP-33 | 先转换再归档丢原件 | 复核失去依据 | 归档包字节级封存 `source_original.bin` | `app/archive.py` | `tests/test_boundary.py::test_archive_keeps_original_bytes` |
+| TRAP-34 | 切换失败污染现网边界 | 半切换状态 | 先全量探测后提交，阻断即保持旧版，支持回滚 | `app/governance.py` | `tests/test_boundary.py::test_switch_blocked_keeps_previous_boundary` |
+| TRAP-35 | 来源规则变化未重判 | 沿用过期退出结论 | 规则指纹漂移即置阻断，要求重新取证 | `app/boundary.py` | `tests/test_boundary.py::test_rule_fingerprint_change_forces_rejudge` |
+
+## 来源切换边界治理
+
+| 能力 | 入口 | 核心文件 | 测试 |
+|---|---|---|---|
+| 边界总览（逐来源可退出/阻断） | `GET /api/boundary`、`GET /boundary` | `app/governance.py` | `tests/test_boundary.py::test_source_status_page_lists_exit_or_block` |
+| 阶段切换（事务化） | `POST /api/boundary/switch` | `app/governance.py`、`app/store.py` | `tests/test_boundary.py::test_switch_blocked_keeps_previous_boundary` |
+| 回滚上一版边界 | `POST /api/boundary/rollback` | `app/store.py` | `tests/test_boundary.py::test_rollback_restores_previous_boundary` |
+| 历史旧批重放漂移取证 | `governance.replay_legacy` | `app/governance.py` | `tests/test_boundary.py::test_replay_drift_blocks_exit` |
+
+退出判定的四项必要证据：规则指纹一致、旧批待复核数为 0、历史旧批重放漂移为 0、来源自测通过。新采集口为现役来源，不评估退出。
 
 ## 对账规则
 

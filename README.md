@@ -20,3 +20,13 @@ SQLite使用命名卷，容器重启后保留历史。要重建演示可在Compo
 源码在 `app/`，样例在 `sample_data/`，测试在 `tests/`；定义见 `docs/DATA-DICTIONARY.md`，模块和边界测试对应关系见 `docs/DEPTH.md`。输入上限2MB，属于离线复核工具。
 
 采信页支持上传或粘贴CSV。完整源字节与参数随批次持久化，跨页通过run_id读取同一结果。`POST /api/runs/{run_id}/rerun` 读取该批不可变输入快照重新计算，规则未变时批号不变。切换另一示例则创建或复用另一批次。
+
+## 来源切换边界（旧采集口停用治理）
+
+旧采集口（GB18030 旧编码）与新采集口（UTF-8 新格式）各自绑定唯一批次泳道，边界规则集中在 `app/boundary.py`，装配与取证在 `app/governance.py`，页面 `/boundary`：
+
+- **泳道隔离**：采信读取字节前先做编码识别与入口闸 `admit()`。旧编码字节只能进旧批泳道，新格式字节只能进新批泳道，互串返回 `ENCODING_MISMATCH`；原始字节可经 `raw_b64` 通道提交，避免文本通道破坏编码。
+- **两阶段边界**：`dual`（双轨并行，旧口仍收口）与 `cutover`（旧口停用，新文件返回 423 `LEGACY_INTAKE_CLOSED`）。
+- **旧批只读重放**：`rerun` 携带批次不可变快照并豁免入口闸（`replay=True`），不经过来源开闭判断；规则未变时批号、视图、四账全部一致，漂移即报 `REPLAY_DRIFT`。归档包内 `source_original.bin` 字节级保留旧原件，禁止先转换再归档。
+- **可退出/阻断取证**：`GET /api/boundary` 逐来源返回状态。旧采集口退出须同时满足规则指纹未变、无待复核旧批、全部历史旧批重放零漂移、来源自测通过；任一不过给出稳定原因码。来源规则（解码链、字段、别名）变化会改变 `rule_fingerprint()`，退出结论立即失效并要求重新取证。
+- **切换事务化与回滚**：`POST /api/boundary/switch` 先全量探测，任一阻断则保持旧版边界（HTTP 423）并返回原因；成功才写入新版本，旧版进入 `boundary_history`。`POST /api/boundary/rollback` 恢复上一版边界。历史与逐来源状态在 `/boundary` 同屏展示。

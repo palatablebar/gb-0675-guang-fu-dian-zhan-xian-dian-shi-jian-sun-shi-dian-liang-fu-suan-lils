@@ -1,0 +1,23 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>日衡 · 来源切换边界</title><link href="/static/theme.css" rel="stylesheet"><link href="/static/layout.css" rel="stylesheet"><link href="/static/components.css" rel="stylesheet"><script src="/static/boundary.js" defer></script></head>
+<body><div class="app"><aside class="rail"><div class="brand"><span class="sun">☼</span><b>日衡</b><small>CURTAILMENT REVIEW</small></div><nav><a href="/intake"><span>00</span>返回复算</a><a class="active" href="/boundary"><span>01</span>来源边界</a></nav><div class="rail-bottom">北岭光伏一场<br>来源切换治理<br>2026-11 停用窗口</div></aside>
+<div class="work"><header class="topbar"><h1>来源切换边界裁定</h1><span id="phase-tag" class="phase-tag">—</span></header>
+<main class="content">
+<section class="panel" style="margin-bottom:14px"><div class="panel__head"><h2>切换边界</h2><span id="fingerprint-tag">规则指纹 —</span></div>
+<div style="padding:15px" id="switch-panel">
+ <p style="margin:0 0 10px;color:var(--ink-muted)">双轨期旧采集口仍可收口旧编码批；停用切换后旧入口对新文件关闭，历史旧批仅可凭不可变快照只读重放。切换前自动全量取证，任一阻断则保持旧版边界。</p>
+ <input id="switch-reason" type="text" placeholder="切换原因（必填留痕）" style="width:100%;height:29px;padding:4px 10px;margin-bottom:10px;background:var(--bg);border:1px solid var(--line);color:var(--ink)">
+ <div style="display:flex;gap:10px;flex-wrap:wrap">
+  <button id="btn-dual" type="button">切回双轨 dual</button>
+  <button id="btn-cutover" type="button">停用旧口 cutover</button>
+  <button id="btn-rollback" type="button" style="background:var(--surface);color:var(--ink);border-color:var(--line-strong)">回滚到上一版边界</button>
+ </div>
+ <output id="switch-feedback" aria-live="polite" style="display:block;min-height:18px;margin-top:10px;color:var(--bad)"></output>
+</div></section>
+<section class="panel" style="margin-bottom:14px"><div class="panel__head"><h2>来源状态（每个来源的可退出 / 阻断）</h2><span>实时取证</span></div>
+<div class="table-scroll"><table><thead><tr><th style="text-align:left">来源</th><th>批次泳道</th><th>编码</th><th style="text-align:left">状态</th><th style="text-align:left">阻断原因</th></tr></thead>
+<tbody id="source-rows"></tbody></table></div></section>
+<section class="grid" style="grid-template-columns:1fr 1fr">
+ <div class="panel"><div class="panel__head"><h2>退出取证证据</h2><span>旧采集口</span></div><div id="evidence" style="padding:14px;font:11px var(--font-num);line-height:2.1"></div></div>
+ <div class="panel"><div class="panel__head"><h2>边界变更历史（可回退）</h2><span>留痕</span></div><div class="table-scroll"><table><thead><tr><th>版本</th><th style="text-align:left">原因</th><th>时刻 UTC</th></tr></thead><tbody id="history-rows"></tbody></table></div></div>
+</section>
+</main><footer class="statusbar"><span>来源规则指纹变化即重判退出结论</span><span>旧批只读重放结果不变</span><a href="/docs">API</a></footer></div></div></body></html>

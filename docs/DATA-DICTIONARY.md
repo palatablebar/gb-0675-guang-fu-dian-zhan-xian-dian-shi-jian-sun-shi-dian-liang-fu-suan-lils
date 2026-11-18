@@ -6,3 +6,11 @@
 每片段损失=max(基线−实际,0)×秒数/3600。实际高于基线时损失0。计算保留Decimal精度，汇总后统一保留0.0001kWh；未定时长单独展示，不并入已确定损失。
 清批INV-A基线100kW、实际60kW、并集30分钟，损失20kWh；INV-B基线50、实际30、20分钟，损失6.6667kWh。总确定损失26.6667kWh。能量核验按实际+非负损失计算可解释基准电量。
 同设备同一时刻不同观测全部隔离；同值重复观测保留稳定编号。封存需无隔离和未定片段。此工具供离线复算，不包含生产控制或电网调度。
+
+## 来源切换边界字段
+
+批次状态 `boundary_decision`：`source_id`（来源标识 legacy-intake/v2-intake）、`lane`（批次泳道 legacy/v2）、`encoding`（实际采信编码 utf-8/gb18030）、`phase`（计算时边界阶段 dual/cutover）、`replay`（是否经不可变快照只读重放）。
+
+边界对象：`phase`、`fingerprint`（来源规则指纹，解码链/字段/别名变化即变）、`version`、`updated_at`、`last_switch`。来源状态：`exitable`（是否可退出）、`status`（可退出/阻断/已停用收口/现役来源）、`blockers[].code` 取值 `RULE_FINGERPRINT_CHANGED`、`OPEN_REVIEWS`、`REPLAY_DRIFT`、`SELF_CHECK_FAILED`、`ENCODING_MISMATCH`、`LEGACY_INTAKE_CLOSED`。
+
+归档包新增 `source_original.bin`（采集口原始字节，不做编码转换）、`source_context.json`（输入参数快照）、`boundary.json`（来源裁决）。

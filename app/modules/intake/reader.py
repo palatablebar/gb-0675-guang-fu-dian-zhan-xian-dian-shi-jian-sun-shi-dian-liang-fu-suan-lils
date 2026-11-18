@@ -1,16 +1,30 @@
-import csv, io, hashlib
+import csv, io
 from app.errors import BusinessError
 from app.reasons import reject
 
-def read_source(state, fields, aliases):
+# 来源识别规则的一部分，boundary.rule_fingerprint 会登记此回退链。
+DECODE_FALLBACK = ('utf-8-sig', 'gb18030')
+
+def decode_raw(raw, encoding=None):
+    """encoding 给定时严格按该编码解码（边界闸已验明来源）；否则走兼容回退链。"""
+    if encoding is not None:
+        bom = encoding == 'utf-8' and raw.startswith(b'\xef\xbb\xbf')
+        try:
+            return raw.decode('utf-8-sig' if bom else encoding), ('utf-8' if encoding == 'utf-8' else encoding)
+        except UnicodeDecodeError:
+            raise BusinessError('ENCODING_MISMATCH', '文件编码与来源声明不一致')
+    for candidate in DECODE_FALLBACK:
+        try:
+            return raw.decode(candidate), ('gb18030' if candidate == 'gb18030' else 'utf-8')
+        except UnicodeDecodeError:
+            continue
+    raise BusinessError('BAD_ENCODING', '文件编码无法识别')
+
+def read_source(state, fields, aliases, encoding=None):
     raw=state['raw_bytes']
     if not raw: raise BusinessError('EMPTY_FILE','请选择非空文件')
     if not raw.strip(b'\xef\xbb\xbf\r\n \t'): raise BusinessError('BLANK_FILE','文件只有空行')
-    text=None
-    for encoding in ('utf-8-sig','gb18030'):
-        try: text=raw.decode(encoding);break
-        except UnicodeDecodeError: continue
-    if text is None: raise BusinessError('BAD_ENCODING','文件编码无法识别')
+    text,used=decode_raw(raw,encoding)
     stream=csv.reader(io.StringIO(text,newline=''),strict=True)
     try:
         original=next(stream)
@@ -42,5 +56,5 @@ def read_source(state, fields, aliases):
         else:
             selected.append(rows[0]);state['counts']['duplicate']+=len(rows)-1
     state['records']=selected
-    state['encoding']=encoding
+    state['encoding']=used
     state['views'][state['context']['keys'][0]]={'rows':[dict(r) for r in selected], 'metrics':{'采信行':len(selected),'隔离行':len(state['quarantine']),'重复行':state['counts']['duplicate']},'title':'原始证据'}
